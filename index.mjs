@@ -32,8 +32,8 @@ const docs = await textSplitter.createDocuments([text]);
 const vectorStore = await MemoryVectorStore.fromDocuments(docs, new OpenAIEmbeddings());
 const retriever = vectorStore.asRetriever();
 
-app.get('/', async (req, res) => {
-    const currentQuestion = req.body.question;
+app.get('/:prompt', async (req, res) => {
+    const currentQuestion = req.params.prompt;
     if (!currentQuestion) {
         res.send({ result: "Please enter a question" })
     }

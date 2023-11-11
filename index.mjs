@@ -7,6 +7,7 @@ import { RecursiveCharacterTextSplitter } from "langchain/text_splitter";
 import { PromptTemplate } from "langchain/prompts";
 import { formatDocumentsAsString } from "langchain/util/document";
 import { ChatOpenAI } from "langchain/chat_models/openai";
+import { GooglePaLM } from "langchain/llms/googlepalm";
 import { AgentExecutor } from "langchain/agents";
 import { SerpAPI } from "langchain/tools";
 import { Calculator } from "langchain/tools/calculator";
@@ -38,7 +39,7 @@ app.get('/:prompt', async (req, res) => {
         res.send({ result: "Please enter a question" })
     }
     /** Define your chat model */
-    const model = new ChatOpenAI({ modelName: "gpt-3.5-turbo-1106", maxTokens: 150, openAIApiKey: process.env.OPENAI_API_KEY });
+    const model = new GooglePaLM({});
     /** Bind a stop token to the model */
     const modelWithStop = model.bind({
         stop: ["\nObservation"],
@@ -65,11 +66,11 @@ app.get('/:prompt', async (req, res) => {
             TOOLS:
             ------
 
-            Assistant has access to the following tools :
+            Assistant has access to the following tools  :
 
             {tools}
 
-            To use a tool , please use the following format:
+            To use a tool , MUST use the following format , NEVER USE IT FOR ANYTHING ELSE:
 
             \\
             Thought: Do I need to use a tool? Yes
@@ -78,7 +79,7 @@ app.get('/:prompt', async (req, res) => {
             Observation: the result of the action
             \\
 
-            When you have a response to say to the Human, or if you do not need to use a tool, you MUST use the format:
+            When you have a response to say to the Human, or if you do not need to use a tool, you MUST use the format never user any other format :
 
             \\
             Thought: Do I need to use a tool? No

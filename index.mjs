@@ -34,10 +34,10 @@ const vectorStore = await MemoryVectorStore.fromDocuments(docs, new OpenAIEmbedd
 const retriever = vectorStore.asRetriever();
 
 app.get('/:prompt', async (req, res) => {
-    const currentQuestion = req.params.prompt;
-    if (!currentQuestion) {
+    if (!req.params.prompt) {
         res.send({ result: "Please enter a question" })
     }
+    const currentQuestion = req.params.prompt;
     /** Define your chat model */
     const model = new GooglePaLM({});
     /** Bind a stop token to the model */
@@ -79,7 +79,7 @@ app.get('/:prompt', async (req, res) => {
             Observation: the result of the action
             \\
 
-            When you have a response to say to the Human, or if you do not need to use a tool, you MUST use the format never user any other format :
+            When you have a response to say to the Human, or if you do not need to use a tool, you MUST use this format ALONE and NO OTHER FORMAT MUST BE USED WITH IT OR ALONE FOR FINAL ANSWER :
 
             \\
             Thought: Do I need to use a tool? No

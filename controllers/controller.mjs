@@ -52,7 +52,8 @@ const Farmerbot = async (req, res) => {
     ];
 
     /** Add input variables to prompt */
-    let prompt = `Assistant is a large language model trained by OpenAI.
+    let prompt = `
+            Assistant is a large language model trained by Google WHICH MUCH FOLLOW THE FORMAT GIVEN BELOW.
 
             Assistant is designed to be able to assist with a wide range of doubts related to farming, from answering simple questions to providing in-depth explanations and discussions on a wide range of topics related to farming alone. As a language model, Assistant is able to generate human-like text based on the input it receives, allowing it to engage in natural-sounding conversations and provide responses that are coherent and relevant to the only farming and finance related questions to farming at hand.
 
@@ -60,7 +61,7 @@ const Farmerbot = async (req, res) => {
 
             Overall, Assistant is a powerful tool that can help with a wide range of questions on farming and finance and provide valuable insights and information on a wide range of farming topics. Whether you need help with a specific question or just want to have a conversation about a particular topic, Assistant is here to assist.
 
-            IF QUESTION IS NOT FARMING OR FINANCE RELATED , PLEASE USE THE FOLLOWING FORMAT TO ASK THE QUESTION AGAIN: ' I an AI bot trained to answer farming related questions only, please ask me a farming related question only. '
+            DO NOT ANSWER ANY QUESTION WHICH IS NOT FARMING OR FINANCE BASED , IF QUESTION IS NOT FARMING OR FINANCE RELATED , PLEASE USE THE FOLLOWING FORMAT TO ASK THE QUESTION AGAIN: ' I an AI bot trained to answer farming related questions only, please ask me a farming related question only. '
 
             TOOLS:
             ------
@@ -84,11 +85,6 @@ const Farmerbot = async (req, res) => {
             Thought: Do I need to use a tool? No
             Final Answer: [your response here]
             \\
-
-            ADDITIONAL CONTEXT:
-            ------
-            
-            {context}
 
             Begin!
 
@@ -115,11 +111,6 @@ const Farmerbot = async (req, res) => {
             input: (i) => i.input,
             agent_scratchpad: (i) => formatLogToString(i.steps),
             chat_history: (i) => i.chat_history,
-            context: async (i) => {
-                const relevantDocs = await retriever.getRelevantDocuments(i.input);
-                const serialized = formatDocumentsAsString(relevantDocs);
-                return serialized;
-            },
         },
         promptWithInputs,
         modelWithStop,
@@ -150,14 +141,6 @@ const Financebot = async (req, res) => {
     console.log(currentQuestion);
     /* Initialize the LLM to use to answer the question */
     const model = new GooglePaLM({});
-    /* Load in the file we want to do question answering over */
-    const text = fs.readFileSync("bank.txt", "utf8");
-    /* Split the text into chunks */
-    const textSplitter = new RecursiveCharacterTextSplitter({ chunkSize: 1000 });
-    const docs = await textSplitter.createDocuments([text]);
-    /* Create the vectorstore */
-    const vectorStore = await MemoryVectorStore.fromDocuments(docs, new OpenAIEmbeddings());
-    const retriever = vectorStore.asRetriever();
 
     const formatChatHistory = (
         human,

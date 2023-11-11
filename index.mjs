@@ -34,8 +34,11 @@ const retriever = vectorStore.asRetriever();
 
 app.get('/', async (req, res) => {
     const currentQuestion = req.body.question;
+    if (!currentQuestion) {
+        res.send({ result: "Please enter a question" })
+    }
     /** Define your chat model */
-    const model = new ChatOpenAI({ modelName: "gpt-3.5-turbo", maxTokens: 150, openAIApiKey: process.env.OPENAI_API_KEY });
+    const model = new ChatOpenAI({ modelName: "gpt-3.5-turbo-1106", maxTokens: 150, openAIApiKey: process.env.OPENAI_API_KEY });
     /** Bind a stop token to the model */
     const modelWithStop = model.bind({
         stop: ["\nObservation"],
@@ -59,19 +62,14 @@ app.get('/', async (req, res) => {
 
             Overall, Assistant is a powerful tool that can help with a wide range of questions on farming and finance and provide valuable insights and information on a wide range of farming topics. Whether you need help with a specific question or just want to have a conversation about a particular topic, Assistant is here to assist.
 
-            CONTEXT:
-            ------
-            
-            {context}
-
             TOOLS:
             ------
 
-            Assistant has access to the following tools:
+            Assistant has access to the following tools :
 
             {tools}
 
-            To use a tool, please use the following format:
+            To use a tool , please use the following format:
 
             \\
             Thought: Do I need to use a tool? Yes
@@ -86,6 +84,11 @@ app.get('/', async (req, res) => {
             Thought: Do I need to use a tool? No
             Final Answer: [your response here]
             \\
+
+            ADDITIONAL CONTEXT:
+            ------
+            
+            {context}
 
             Begin!
 

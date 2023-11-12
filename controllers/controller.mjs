@@ -21,14 +21,6 @@ import { ChatOpenAI } from "langchain/chat_models/openai";
 dotenv.config();
 
 const memory = new BufferMemory({ memoryKey: "chat_history" });
-//TRAINING DOCUMENT
-const text = fs.readFileSync("bank.txt", "utf8");
-/* Split the text into chunks */
-const textSplitter = new RecursiveCharacterTextSplitter({ chunkSize: 1000 });
-const docs = await textSplitter.createDocuments([text]);
-/* Create the vectorstore */
-const vectorStore = await MemoryVectorStore.fromDocuments(docs, new GooglePaLMEmbeddings());
-const retriever = vectorStore.asRetriever();
 
 
 const Farmerbot = async (req, res) => {

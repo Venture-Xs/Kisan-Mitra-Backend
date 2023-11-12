@@ -16,6 +16,7 @@ import { formatLogToString } from "langchain/agents/format_scratchpad/log";
 import { renderTextDescription } from "langchain/tools/render";
 import { ReActSingleInputOutputParser } from "langchain/agents/react/output_parser";
 import { ChatOpenAI } from "langchain/chat_models/openai";
+import { StringOutputParser } from "langchain/dist/schema/output_parser";
 
 
 dotenv.config();

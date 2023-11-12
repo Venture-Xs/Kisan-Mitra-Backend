@@ -6,8 +6,9 @@ import { RecursiveCharacterTextSplitter } from "langchain/text_splitter";
 import { PromptTemplate } from "langchain/prompts";
 import { formatDocumentsAsString } from "langchain/util/document";
 import { GooglePaLM } from "langchain/llms/googlepalm";
-import { AgentExecutor } from "langchain/agents";
-import { SerpAPI } from "langchain/tools";
+// import { GoogleVertexAI } from "langchain/llms/googlevertexai";
+import { AgentExecutor, initializeAgentExecutorWithOptions } from "langchain/agents";
+import { GoogleCustomSearch, SerpAPI } from "langchain/tools";
 import { Calculator } from "langchain/tools/calculator";
 import { RunnableSequence } from "langchain/schema/runnable";
 import { BufferMemory } from "langchain/memory";
@@ -36,24 +37,26 @@ const Farmerbot = async (req, res) => {
     }
     const currentQuestion = req.params.prompt;
     /** Define your chat model */
-    const model = new GooglePaLM({});
+    const model = new ChatOpenAI({ modelName: 'gpt-3.5-turbo-1106', verbose: true, temperature: 1 });
+
+    model.bind({ stop: ["\nObservation"] })
     /** Bind a stop token to the model */
     const modelWithStop = model.bind({
         stop: ["\nObservation"],
     });
     /** Define your list of tools */
     const tools = [
-        new SerpAPI(process.env.SERPAPI_API_KEY, {
-            location: "India",
-            hl: "en",
-            gl: "in",
-        }),
-        new Calculator(),
+        new GoogleCustomSearch(),
+        // new SerpAPI(process.env.SERPAPI_API_KEY, {
+        //     location: "India",
+        //     hl: "en",
+        //     gl: "in",
+        // }),
     ];
 
     /** Add input variables to prompt */
     let prompt = `
-            Assistant is a large language model trained by Google WHICH MUCH FOLLOW THE FORMAT GIVEN BELOW.
+            Assistant is a large language model trained by Google WHICH MUST ALWAYS GIVE ANSWERS WITH RESPECT TO YEAR 2023 ( the latest data ) and Indian database ( Rupee as currency ).
 
             Assistant is designed to be able to assist with a wide range of doubts related to farming, from answering simple questions to providing in-depth explanations and discussions on a wide range of topics related to farming alone. As a language model, Assistant is able to generate human-like text based on the input it receives, allowing it to engage in natural-sounding conversations and provide responses that are coherent and relevant to the only farming and finance related questions to farming at hand.
 
@@ -85,6 +88,7 @@ const Farmerbot = async (req, res) => {
             Thought: Do I need to use a tool? No
             Final Answer: [your response here]
             \\
+            ------
 
             Begin!
 
@@ -127,7 +131,10 @@ const Farmerbot = async (req, res) => {
         agent: runnableAgent,
         tools,
         memory,
-        verbose: true,
+        handleParsingErrors: (e) => {
+            console.log(e)
+            return "";
+        }
     });
 
     const result = await executor.call({ input: currentQuestion });
@@ -137,10 +144,20 @@ const Farmerbot = async (req, res) => {
 let previousChat = "";
 
 const Financebot = async (req, res) => {
+    const bankName = req.params.bankName;
     const currentQuestion = req.params.prompt;
     console.log(currentQuestion);
     /* Initialize the LLM to use to answer the question */
     const model = new GooglePaLM({});
+
+    //TRAINING DOCUMENT
+    const text = fs.readFileSync(`${bankName}.txt`, "utf8");
+    /* Split the text into chunks */
+    const textSplitter = new RecursiveCharacterTextSplitter({ chunkSize: 1000 });
+    const docs = await textSplitter.createDocuments([text]);
+    /* Create the vectorstore */
+    const vectorStore = await MemoryVectorStore.fromDocuments(docs, new GooglePaLMEmbeddings());
+    const retriever = vectorStore.asRetriever();
 
     const formatChatHistory = (
         human,
@@ -215,8 +232,45 @@ const Financebot = async (req, res) => {
     res.send({ result });
 }
 
-const Genericbot = async (req, res) => {
-    res.send({ result: "Generic bot" })
+const getCredit = async (req, res) => {
+    const location = req.query.location;
+    const land = req.query.land;
+    const asset = req.params.asset;
+    const annincome = req.query.annincome;
+    const crops = req.query.crops;
+    const govtScheme = req.query.govtScheme;
+
+    const chat = new GooglePaLM({ temperature: 1 });
+    const prompt = `
+    THE BOT IS TRAINED PREDICT A SCORE FOR FARMERS OUT OF 10 TO ANALYSE RISK OF GIVING THEM LOANS
+    IMPORTANT THE RESPONSE SHOULD ONLY CONTAIN A SINGLE FLOATING POINT VALUE OUT OF 10.0
+
+    Use the following inputs:
+    location: ${location}
+    land: ${land} owned
+    asset: ${asset} worth in lakhs rupees
+    annual income: ${annincome} in lakh rupees
+    crops: ${crops} grown as string separated by commas
+    govt scheme: ${govtScheme} availed by the farmer in the past
+
+    conditions :
+
+    People with hight land assests , income , crops and govt schemes availed are more likely to get loans
+    whereas people with low land assests , income , crops and govt schemes availed are less likely to get loans
+    government schemes are given less importance than other factors
+    land assests are given more importance than other factors
+    income is given more importance than other factors
+    crops are given more importance than other factors
+
+    THE RESPONSE SHOULD DEPEND ON THE ABOVE FACTORS , YOU CAN TAKE ASSUMPTIONS
+    //
+        [response in float]
+    //
+    `;
+
+    const promptFormatted = prompt.replace(/\\/g, "```");
+    const result = await chat.call(promptFormatted);
+    res.send({ result });
 }
 
-export { Farmerbot, Financebot, Genericbot }
+export { Farmerbot, Financebot, getCredit }
